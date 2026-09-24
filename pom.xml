@@ -29,7 +29,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
-  <name>Yildiz-Engine Module IDP</name>
+  <name>Yildiz-Engine Module IDP Keycloak</name>
   <description>Module to support identity provider using Keycloak as implementation.</description>
   <inceptionYear>2026</inceptionYear>
   <url>https://engine.yildiz-games.be</url>
