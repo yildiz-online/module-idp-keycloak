@@ -1,15 +1,13 @@
 package be.yildizgames.module.idp.keycloak;
 
+import be.yildizgames.module.http.HttpClientBuilder;
 import be.yildizgames.module.idp.IdpConfiguration;
 import be.yildizgames.module.jwt.IdToken;
 import be.yildizgames.module.jwt.Tokens;
-import org.json.JSONObject;
+import be.yildizgames.module.serialization.Serializer;
+import be.yildizgames.module.serialization.SerializerBuilder;
 
-import java.net.URI;
 import java.net.URLEncoder;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 
 /**
@@ -17,9 +15,11 @@ import java.nio.charset.StandardCharsets;
  */
 public class KeycloakAuth {
 
-    private final HttpClient httpClient = HttpClient.newHttpClient();
-
     private final IdpConfiguration configuration;
+
+    private final Serializer<String> serializer = SerializerBuilder.provideJson();
+
+    private final be.yildizgames.module.http.HttpClient client = HttpClientBuilder.provide().buildHttpClient();
 
     public KeycloakAuth(IdpConfiguration configuration) {
         this.configuration = configuration;
@@ -47,27 +47,32 @@ public class KeycloakAuth {
                 .add("code_verifier", codeVerifier)
                 .build();
 
-        var request = HttpRequest.newBuilder()
-                .uri(URI.create(this.configuration.tokenEndpoint()))
-                .header("Content-Type", "application/x-www-form-urlencoded")
-                .POST(HttpRequest.BodyPublishers.ofString(body))
-                .build();
+        var response = client.postText(
+                this.configuration.tokenEndpoint(),
+                body,
+                "application/x-www-form-urlencoded");
 
-        var response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-        if (response.statusCode() != 200) {
-            throw new IllegalStateException("Token endpoint error: " + response.statusCode() + " - " + response.body());
-        }
-
-        var json = new JSONObject(response.body());
+        var json = this.serializer.readObject(response.body().orElseThrow(), ReceivedTokens.class);
         long now = System.currentTimeMillis() / 1000;
 
         return new Tokens(
-                json.getString("access_token"),
-                json.getString("refresh_token"),
-                new IdToken(json.getString("id_token")),
-                json.getLong("expires_in"),
+                json.access_token,
+                json.refresh_token,
+                new IdToken(json.id_token),
+                json.expires_in,
                 now
         );
+    }
+
+    private static class ReceivedTokens {
+
+        private String access_token;
+
+        private String refresh_token;
+
+        private String id_token;
+
+        private long expires_in;
     }
 
     private static class URLEncodedFormBuilder {

@@ -27,9 +27,9 @@ open module be.yildizgames.module.idp.keycloak {
     requires jdk.httpserver;
     requires be.yildizgames.module.idp;
     requires be.yildizgames.module.jwt;
-    requires java.net.http;
-    requires org.json;
     requires java.desktop;
+    requires be.yildizgames.module.serialization;
+    requires be.yildizgames.module.http;
 
     provides IdpConnectorBuilder with KeycloakConnectorBuilder;
 }
